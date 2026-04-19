@@ -1,4 +1,5 @@
 from rest_framework import filters, mixins, viewsets
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 
@@ -9,10 +10,18 @@ from .serializers import (CommentSerializer, FollowSerializer,
                           GroupSerializer, PostSerializer)
 
 
+class PostPagination(LimitOffsetPagination):
+    def paginate_queryset(self, queryset, request, view=None):
+        if 'limit' not in request.query_params and 'offset' not in request.query_params:
+            return None
+        return super().paginate_queryset(queryset, request, view)
+
+
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    pagination_class = PostPagination
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
